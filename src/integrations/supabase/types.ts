@@ -7,14 +7,210 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.4"
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          created_at: string | null
+          customer_id: string | null
+          id: string
+          preferred_time: string | null
+          service_name: string | null
+          shop_id: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          preferred_time?: string | null
+          service_name?: string | null
+          shop_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          preferred_time?: string | null
+          service_name?: string | null
+          shop_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      favorites: {
+        Row: {
+          customer_id: string
+          shop_id: string
+        }
+        Insert: {
+          customer_id: string
+          shop_id: string
+        }
+        Update: {
+          customer_id?: string
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorites_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          customer_id: string | null
+          id: string
+          rating: number | null
+          shop_id: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          rating?: number | null
+          shop_id?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          rating?: number | null
+          shop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shops: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          name: string
+          owner_id: string | null
+          photo_url: string | null
+          services: Json | null
+          status: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          owner_id?: string | null
+          photo_url?: string | null
+          services?: Json | null
+          status?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          owner_id?: string | null
+          photo_url?: string | null
+          services?: Json | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shops_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string | null
+          phone: string | null
+          profile_photo: string | null
+          role: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id: string
+          name?: string | null
+          phone?: string | null
+          profile_photo?: string | null
+          role: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string | null
+          phone?: string | null
+          profile_photo?: string | null
+          role?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -52,6 +52,12 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				status: {
+					open: 'hsl(var(--status-open))',
+					mild: 'hsl(var(--status-mild))',
+					busy: 'hsl(var(--status-busy))',
+					closed: 'hsl(var(--status-closed))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
