@@ -4,6 +4,7 @@ import { Navigation } from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import CustomerDashboard from '@/components/CustomerDashboard';
 import ShopOwnerDashboard from '@/components/ShopOwnerDashboard';
+import ProfileSetup from '@/components/ProfileSetup';
 
 const Index = () => {
   const { user, userProfile, loading, signOut } = useAuth();
@@ -31,6 +32,14 @@ const Index = () => {
         </div>
       </div>
     );
+  }
+
+  // Check if profile setup is complete
+  const needsProfileSetup = !userProfile.name || !userProfile.phone || 
+    (userProfile.role === 'shop_owner' && !userProfile.shop_created);
+
+  if (needsProfileSetup) {
+    return <ProfileSetup userProfile={userProfile} onComplete={() => window.location.reload()} />;
   }
 
   return (

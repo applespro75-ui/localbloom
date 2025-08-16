@@ -141,6 +141,7 @@ export type Database = {
           longitude: number | null
           name: string
           owner_id: string | null
+          phone: string | null
           photo_url: string | null
           services: Json | null
           status: string | null
@@ -154,6 +155,7 @@ export type Database = {
           longitude?: number | null
           name: string
           owner_id?: string | null
+          phone?: string | null
           photo_url?: string | null
           services?: Json | null
           status?: string | null
@@ -167,6 +169,7 @@ export type Database = {
           longitude?: number | null
           name?: string
           owner_id?: string | null
+          phone?: string | null
           photo_url?: string | null
           services?: Json | null
           status?: string | null
@@ -186,6 +189,8 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string
+          location_lat: number | null
+          location_lng: number | null
           name: string | null
           phone: string | null
           profile_photo: string | null
@@ -195,6 +200,8 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id: string
+          location_lat?: number | null
+          location_lng?: number | null
           name?: string | null
           phone?: string | null
           profile_photo?: string | null
@@ -204,6 +211,8 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          location_lat?: number | null
+          location_lng?: number | null
           name?: string | null
           phone?: string | null
           profile_photo?: string | null

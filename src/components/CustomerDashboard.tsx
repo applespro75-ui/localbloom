@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
+import BookingModal from '@/components/BookingModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -22,6 +23,8 @@ export default function CustomerDashboard() {
   const [shops, setShops] = useState<Shop[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -150,7 +153,14 @@ export default function CustomerDashboard() {
           </Card>
         ) : (
           filteredShops.map((shop) => (
-            <Card key={shop.id} className="cursor-pointer hover:shadow-md transition-shadow">
+            <Card 
+              key={shop.id} 
+              className="cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => {
+                setSelectedShop(shop);
+                setBookingModalOpen(true);
+              }}
+            >
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
@@ -182,13 +192,13 @@ export default function CustomerDashboard() {
                   </p>
                 )}
                 {shop.services && shop.services.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 mb-3">
                     {shop.services.slice(0, 3).map((service, index) => (
                       <span
                         key={index}
                         className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary/10 text-primary"
                       >
-                        {service.name}
+                        {service.name} - ${service.price}
                       </span>
                     ))}
                     {shop.services.length > 3 && (
@@ -198,11 +208,24 @@ export default function CustomerDashboard() {
                     )}
                   </div>
                 )}
+                <Button className="w-full mt-2" onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedShop(shop);
+                  setBookingModalOpen(true);
+                }}>
+                  Book Service
+                </Button>
               </CardContent>
             </Card>
           ))
         )}
       </div>
+      
+      <BookingModal 
+        shop={selectedShop}
+        isOpen={bookingModalOpen}
+        onClose={() => setBookingModalOpen(false)}
+      />
     </div>
   );
 }
