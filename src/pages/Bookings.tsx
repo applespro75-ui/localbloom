@@ -12,7 +12,9 @@ interface Booking {
   id: string;
   shop_id: string;
   customer_id: string;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  status: string;
+  service_name?: string;
+  preferred_time?: string;
   created_at: string;
   shops?: {
     name: string;
@@ -86,7 +88,7 @@ export default function Bookings() {
       const { data, error } = await query;
 
       if (error) throw error;
-      setBookings(data || []);
+      setBookings((data || []) as Booking[]);
     } catch (error: any) {
       toast({
         title: "Error fetching bookings",
@@ -98,7 +100,7 @@ export default function Bookings() {
     }
   };
 
-  const updateBookingStatus = async (bookingId: string, newStatus: 'confirmed' | 'cancelled' | 'completed') => {
+  const updateBookingStatus = async (bookingId: string, newStatus: string) => {
     try {
       const { error } = await supabase
         .from('bookings')

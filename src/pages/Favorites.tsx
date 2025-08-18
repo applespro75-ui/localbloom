@@ -13,13 +13,13 @@ interface Shop {
   name: string;
   address: string;
   description: string;
-  status: 'open' | 'mild' | 'busy' | 'closed';
+  status: string;
   services: any[];
   photo_url?: string;
 }
 
 interface Favorite {
-  id: string;
+  customer_id: string;
   shop_id: string;
   shops: Shop;
 }
@@ -43,7 +43,7 @@ export default function Favorites() {
       const { data, error } = await supabase
         .from('favorites')
         .select(`
-          id,
+          customer_id,
           shop_id,
           shops (
             id,
@@ -55,11 +55,10 @@ export default function Favorites() {
             photo_url
           )
         `)
-        .eq('customer_id', user?.id)
-        .order('created_at', { ascending: false });
+        .eq('customer_id', user?.id);
 
       if (error) throw error;
-      setFavorites(data || []);
+      setFavorites((data || []) as Favorite[]);
     } catch (error: any) {
       toast({
         title: "Error fetching favorites",
@@ -71,12 +70,13 @@ export default function Favorites() {
     }
   };
 
-  const removeFromFavorites = async (favoriteId: string) => {
+  const removeFromFavorites = async (shopId: string) => {
     try {
       const { error } = await supabase
         .from('favorites')
         .delete()
-        .eq('id', favoriteId);
+        .eq('customer_id', user?.id)
+        .eq('shop_id', shopId);
 
       if (error) throw error;
 
@@ -129,7 +129,7 @@ export default function Favorites() {
         ) : (
           favorites.map((favorite) => (
             <Card 
-              key={favorite.id} 
+              key={`${favorite.customer_id}-${favorite.shop_id}`} 
               className="cursor-pointer hover:shadow-md transition-shadow"
               onClick={() => {
                 setSelectedShop(favorite.shops);
@@ -146,13 +146,13 @@ export default function Favorites() {
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
-                    <StatusBadge status={favorite.shops.status} />
+                    <StatusBadge status={favorite.shops.status as any} />
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
-                        removeFromFavorites(favorite.id);
+                        removeFromFavorites(favorite.shop_id);
                       }}
                       className="text-red-500 hover:text-red-700"
                     >
