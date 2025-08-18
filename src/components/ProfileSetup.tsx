@@ -186,7 +186,7 @@ export default function ProfileSetup({ userProfile, onComplete }: ProfileSetupPr
                       <RadioGroup 
                         value={status} 
                         onValueChange={(value: 'open' | 'mild' | 'busy' | 'closed') => setStatus(value)}
-                        className="flex gap-4"
+                        className="flex flex-wrap gap-2 sm:gap-4"
                       >
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="open" id="open" />
@@ -231,13 +231,13 @@ export default function ProfileSetup({ userProfile, onComplete }: ProfileSetupPr
                           />
                         </div>
                         <div className="w-24 space-y-2">
-                          <Label>Price ($)</Label>
+                          <Label>Price (₹)</Label>
                           <Input
                             type="number"
                             value={service.price}
                             onChange={(e) => updateService(index, 'price', parseFloat(e.target.value) || 0)}
                             min="0"
-                            step="0.01"
+                            step="1"
                           />
                         </div>
                         {services.length > 1 && (

@@ -198,7 +198,7 @@ export default function CustomerDashboard() {
                         key={index}
                         className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary/10 text-primary"
                       >
-                        {service.name} - ${service.price}
+                        {service.name} - ₹{service.price}
                       </span>
                     ))}
                     {shop.services.length > 3 && (

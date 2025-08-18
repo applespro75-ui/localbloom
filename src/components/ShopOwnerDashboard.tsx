@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Edit, Clock, CheckCircle, XCircle, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
@@ -36,16 +37,16 @@ export default function ShopOwnerDashboard() {
   const [shop, setShop] = useState<Shop | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
       fetchShopData();
-      fetchBookings();
       
-      // Set up real-time subscription for new bookings
-      const channel = supabase
+      // Set up real-time subscription for new bookings and status changes
+      const bookingChannel = supabase
         .channel('booking-changes')
         .on(
           'postgres_changes',
@@ -56,16 +57,46 @@ export default function ShopOwnerDashboard() {
           },
           (payload) => {
             console.log('Booking updated:', payload);
-            fetchBookings(); // Refresh bookings when any booking changes
+            fetchBookings();
+          }
+        )
+        .subscribe();
+
+      const shopChannel = supabase
+        .channel('shop-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'shops',
+            filter: `owner_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('Shop updated:', payload);
+            if (payload.new) {
+              setShop(payload.new as Shop);
+              toast({
+                title: "Status updated in real-time",
+                description: `Shop status changed to ${payload.new.status}.`,
+              });
+            }
           }
         )
         .subscribe();
 
       return () => {
-        supabase.removeChannel(channel);
+        supabase.removeChannel(bookingChannel);
+        supabase.removeChannel(shopChannel);
       };
     }
   }, [user]);
+
+  useEffect(() => {
+    if (shop?.id) {
+      fetchBookings();
+    }
+  }, [shop?.id]);
 
   const fetchShopData = async () => {
     try {
@@ -167,6 +198,10 @@ export default function ShopOwnerDashboard() {
     }
   };
 
+  const handleLogout = async () => {
+    await signOut();
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -201,120 +236,157 @@ export default function ShopOwnerDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Shop Status Card */}
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                {shop.name}
-                <StatusBadge status={shop.status} />
-              </CardTitle>
-              <CardDescription>{shop.address}</CardDescription>
-            </div>
-            <Button variant="outline" size="sm">
-              <Edit size={16} className="mr-2" />
-              Edit
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Shop Status</label>
-              <Select value={shop.status} onValueChange={updateShopStatus}>
-                <SelectTrigger className="w-full mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="mild">Mild</SelectItem>
-                  <SelectItem value="busy">Busy</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {shop.description && (
-              <p className="text-sm text-muted-foreground">{shop.description}</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Header with action buttons */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Shop Dashboard</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsEditing(!isEditing)}>
+            <Settings size={16} className="mr-2" />
+            {isEditing ? 'Cancel Edit' : 'Edit Shop'}
+          </Button>
+          <Button variant="destructive" onClick={handleLogout}>
+            <LogOut size={16} className="mr-2" />
+            Logout
+          </Button>
+        </div>
+      </div>
 
-      {/* Booking Requests */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock size={20} />
-            Booking Requests
-            {pendingBookings.length > 0 && (
-              <Badge variant="destructive">{pendingBookings.length}</Badge>
-            )}
-          </CardTitle>
-          <CardDescription>
-            Manage incoming booking requests from customers
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {bookings.length === 0 ? (
-            <p className="text-center text-muted-foreground py-4">
-              No booking requests yet.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {bookings.map((booking) => (
-                <div key={booking.id} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">{booking.users?.name || 'Customer'}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Service: {booking.service_name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Preferred: {new Date(booking.preferred_time).toLocaleString()}
-                      </p>
-                      {booking.users?.phone && (
-                        <p className="text-sm text-muted-foreground">
-                          Phone: {booking.users.phone}
-                        </p>
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="overview">Shop Overview</TabsTrigger>
+          <TabsTrigger value="bookings">Bookings</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="overview" className="space-y-6">
+          {/* Shop Status Card */}
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="flex items-center gap-2 flex-wrap">
+                    {shop.name}
+                    <StatusBadge status={shop.status} />
+                  </CardTitle>
+                  <CardDescription>{shop.address}</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Shop Status (Real-time updates)</label>
+                  <Select value={shop.status} onValueChange={updateShopStatus}>
+                    <SelectTrigger className="w-full mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="mild">Mild</SelectItem>
+                      <SelectItem value="busy">Busy</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {shop.description && (
+                  <p className="text-sm text-muted-foreground">{shop.description}</p>
+                )}
+
+                {/* Services Display */}
+                {shop.services && shop.services.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Services</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {shop.services.map((service: any, index: number) => (
+                        <div key={index} className="flex justify-between items-center p-2 border rounded">
+                          <span className="text-sm">{service.name}</span>
+                          <span className="text-sm font-medium">₹{service.price}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="bookings" className="space-y-6">
+          {/* Booking Requests */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock size={20} />
+                Booking Requests
+                {pendingBookings.length > 0 && (
+                  <Badge variant="destructive">{pendingBookings.length}</Badge>
+                )}
+              </CardTitle>
+              <CardDescription>
+                Manage incoming booking requests from customers
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {bookings.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4">
+                  No booking requests yet.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {bookings.map((booking) => (
+                    <div key={booking.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium">{booking.users?.name || 'Customer'}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Service: {booking.service_name}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Preferred: {new Date(booking.preferred_time).toLocaleString()}
+                          </p>
+                          {booking.users?.phone && (
+                            <p className="text-sm text-muted-foreground">
+                              Phone: {booking.users.phone}
+                            </p>
+                          )}
+                        </div>
+                        <Badge
+                          variant={
+                            booking.status === 'pending' ? 'outline' :
+                            booking.status === 'accepted' ? 'default' : 'destructive'
+                          }
+                        >
+                          {booking.status}
+                        </Badge>
+                      </div>
+                      
+                      {booking.status === 'pending' && (
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            onClick={() => updateBookingStatus(booking.id, 'accepted')}
+                          >
+                            <CheckCircle size={16} className="mr-2" />
+                            Accept
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => updateBookingStatus(booking.id, 'declined')}
+                          >
+                            <XCircle size={16} className="mr-2" />
+                            Decline
+                          </Button>
+                        </div>
                       )}
                     </div>
-                    <Badge
-                      variant={
-                        booking.status === 'pending' ? 'outline' :
-                        booking.status === 'accepted' ? 'default' : 'destructive'
-                      }
-                    >
-                      {booking.status}
-                    </Badge>
-                  </div>
-                  
-                  {booking.status === 'pending' && (
-                    <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
-                        onClick={() => updateBookingStatus(booking.id, 'accepted')}
-                      >
-                        <CheckCircle size={16} className="mr-2" />
-                        Accept
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => updateBookingStatus(booking.id, 'declined')}
-                      >
-                        <XCircle size={16} className="mr-2" />
-                        Decline
-                      </Button>
-                    </div>
-                  )}
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

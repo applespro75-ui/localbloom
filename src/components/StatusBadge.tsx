@@ -28,7 +28,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   const config = statusConfig[status];
   
   return (
-    <Badge className={`${config.className} ${className || ''}`}>
+    <Badge className={`${config.className} ${className || ''} whitespace-nowrap text-xs px-2 py-1`}>
       {config.label}
     </Badge>
   );

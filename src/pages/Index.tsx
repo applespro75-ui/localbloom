@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { Navigation } from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import CustomerDashboard from '@/components/CustomerDashboard';
-import ShopOwnerDashboard from '@/components/ShopOwnerDashboard';
+import ShopOwnerContainer from '@/components/ShopOwnerContainer';
 import ProfileSetup from '@/components/ProfileSetup';
 
 const Index = () => {
@@ -34,11 +34,10 @@ const Index = () => {
     );
   }
 
-  // Check if profile setup is complete
-  const needsProfileSetup = !userProfile.name || !userProfile.phone || 
-    (userProfile.role === 'shop_owner' && !userProfile.shop_created);
+  // Check if customer profile setup is complete 
+  const customerNeedsProfileSetup = userProfile.role === 'customer' && (!userProfile.name || !userProfile.phone);
 
-  if (needsProfileSetup) {
+  if (customerNeedsProfileSetup) {
     return <ProfileSetup userProfile={userProfile} onComplete={() => window.location.reload()} />;
   }
 
@@ -57,7 +56,7 @@ const Index = () => {
       
       <main className="p-4">
         {userProfile.role === 'shop_owner' ? (
-          <ShopOwnerDashboard />
+          <ShopOwnerContainer />
         ) : (
           <CustomerDashboard />
         )}
