@@ -93,11 +93,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (error) {
-      toast({
-        title: "Sign in failed",
-        description: error.message,
-        variant: "destructive"
-      });
+      // Check if it's a user not found error
+      if (error.message.includes('Invalid login credentials') || error.message.includes('Email not confirmed')) {
+        toast({
+          title: "Account not found",
+          description: "Please register or sign up first.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Sign in failed",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
     }
 
     return { error };
