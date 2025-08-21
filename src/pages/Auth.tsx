@@ -6,9 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -16,6 +19,7 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   
   const { signIn, signUp, user } = useAuth();
+  const { toast } = useToast();
 
   if (user) {
     return <Navigate to="/" replace />;
@@ -25,7 +29,27 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
 
-    if (isLogin) {
+    if (isForgotPassword) {
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth`,
+        });
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Reset email sent",
+          description: "Check your email for password reset instructions.",
+        });
+        setIsForgotPassword(false);
+      } catch (error: any) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+    } else if (isLogin) {
       await signIn(email, password);
     } else {
       await signUp(email, password, role, name);
@@ -39,18 +63,20 @@ export default function Auth() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">
-            {isLogin ? 'Sign In' : 'Create Account'}
+            {isForgotPassword ? 'Reset Password' : (isLogin ? 'Sign In' : 'Create Account')}
           </CardTitle>
           <CardDescription>
-            {isLogin 
-              ? 'Enter your credentials to access your account' 
-              : 'Choose your role and create a new account'
+            {isForgotPassword 
+              ? 'Enter your email to receive reset instructions'
+              : (isLogin 
+                ? 'Enter your credentials to access your account' 
+                : 'Choose your role and create a new account')
             }
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
+            {!isLogin && !isForgotPassword && (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
@@ -92,34 +118,65 @@ export default function Auth() {
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                required
-              />
-            </div>
+            {!isForgotPassword && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  required
+                />
+              </div>
+            )}
             
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
+              {loading ? 'Please wait...' : (isForgotPassword ? 'Send Reset Email' : (isLogin ? 'Sign In' : 'Create Account'))}
             </Button>
           </form>
           
-          <div className="mt-4 text-center">
-            <Button
-              variant="ghost"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-primary"
-            >
-              {isLogin 
-                ? "Don't have an account? Sign up" 
-                : "Already have an account? Sign in"
-              }
-            </Button>
+          <div className="mt-4 text-center space-y-2">
+            {!isForgotPassword && (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="text-primary"
+                >
+                  {isLogin 
+                    ? "Don't have an account? Sign up" 
+                    : "Already have an account? Sign in"
+                  }
+                </Button>
+                
+                {isLogin && (
+                  <div>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setIsForgotPassword(true)}
+                      className="text-primary text-sm"
+                    >
+                      Forgot your password?
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+            
+            {isForgotPassword && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setIsForgotPassword(false);
+                  setIsLogin(true);
+                }}
+                className="text-primary"
+              >
+                Back to sign in
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

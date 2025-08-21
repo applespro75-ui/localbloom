@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
+import { Navigation } from '@/components/Navigation';
 
 interface Booking {
   id: string;
@@ -237,57 +238,60 @@ export default function Bookings() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold">
-          {userProfile?.role === 'shop_owner' ? 'Shop Bookings' : 'My Bookings'}
-        </h1>
-        <p className="text-muted-foreground">
-          {userProfile?.role === 'shop_owner' 
-            ? 'Manage customer booking requests' 
-            : 'Track your service bookings'
-          }
-        </p>
+    <div className="min-h-screen bg-background pb-20">
+      <div className="p-4 space-y-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">
+            {userProfile?.role === 'shop_owner' ? 'Shop Bookings' : 'My Bookings'}
+          </h1>
+          <p className="text-muted-foreground">
+            {userProfile?.role === 'shop_owner' 
+              ? 'Manage customer booking requests' 
+              : 'Track your service bookings'
+            }
+          </p>
+        </div>
+
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="all">All ({bookings.length})</TabsTrigger>
+            <TabsTrigger value="pending">Pending ({filterBookingsByStatus('pending').length})</TabsTrigger>
+            <TabsTrigger value="confirmed">Confirmed ({filterBookingsByStatus('confirmed').length})</TabsTrigger>
+            <TabsTrigger value="completed">Completed ({filterBookingsByStatus('completed').length})</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="all" className="space-y-4 mt-6">
+            {bookings.length === 0 ? (
+              <Card>
+                <CardContent className="pt-6 text-center">
+                  <p className="text-muted-foreground">No bookings found.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              bookings.map((booking) => <BookingCard key={booking.id} booking={booking} />)
+            )}
+          </TabsContent>
+
+          <TabsContent value="pending" className="space-y-4 mt-6">
+            {filterBookingsByStatus('pending').map((booking) => (
+              <BookingCard key={booking.id} booking={booking} />
+            ))}
+          </TabsContent>
+
+          <TabsContent value="confirmed" className="space-y-4 mt-6">
+            {filterBookingsByStatus('confirmed').map((booking) => (
+              <BookingCard key={booking.id} booking={booking} />
+            ))}
+          </TabsContent>
+
+          <TabsContent value="completed" className="space-y-4 mt-6">
+            {filterBookingsByStatus('completed').map((booking) => (
+              <BookingCard key={booking.id} booking={booking} />
+            ))}
+          </TabsContent>
+        </Tabs>
       </div>
-
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="all">All ({bookings.length})</TabsTrigger>
-          <TabsTrigger value="pending">Pending ({filterBookingsByStatus('pending').length})</TabsTrigger>
-          <TabsTrigger value="confirmed">Confirmed ({filterBookingsByStatus('confirmed').length})</TabsTrigger>
-          <TabsTrigger value="completed">Completed ({filterBookingsByStatus('completed').length})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all" className="space-y-4 mt-6">
-          {bookings.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <p className="text-muted-foreground">No bookings found.</p>
-              </CardContent>
-            </Card>
-          ) : (
-            bookings.map((booking) => <BookingCard key={booking.id} booking={booking} />)
-          )}
-        </TabsContent>
-
-        <TabsContent value="pending" className="space-y-4 mt-6">
-          {filterBookingsByStatus('pending').map((booking) => (
-            <BookingCard key={booking.id} booking={booking} />
-          ))}
-        </TabsContent>
-
-        <TabsContent value="confirmed" className="space-y-4 mt-6">
-          {filterBookingsByStatus('confirmed').map((booking) => (
-            <BookingCard key={booking.id} booking={booking} />
-          ))}
-        </TabsContent>
-
-        <TabsContent value="completed" className="space-y-4 mt-6">
-          {filterBookingsByStatus('completed').map((booking) => (
-            <BookingCard key={booking.id} booking={booking} />
-          ))}
-        </TabsContent>
-      </Tabs>
+      <Navigation />
     </div>
   );
 }

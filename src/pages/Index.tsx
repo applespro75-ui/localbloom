@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import CustomerDashboard from '@/components/CustomerDashboard';
 import ShopOwnerContainer from '@/components/ShopOwnerContainer';
 import ProfileSetup from '@/components/ProfileSetup';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const Index = () => {
   const { user, userProfile, loading, signOut } = useAuth();
@@ -48,9 +49,12 @@ const Index = () => {
           <h1 className="text-xl font-bold">
             {userProfile.role === 'shop_owner' ? 'Shop Dashboard' : 'Find Shops'}
           </h1>
-          <Button variant="outline" size="sm" onClick={signOut}>
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Button variant="outline" size="sm" onClick={signOut}>
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
       
