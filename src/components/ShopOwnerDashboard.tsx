@@ -6,6 +6,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
@@ -258,61 +259,103 @@ export default function ShopOwnerDashboard() {
         </TabsList>
         
         <TabsContent value="overview" className="space-y-6">
-          {/* Shop Status Card */}
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="flex items-center gap-2 flex-wrap">
-                    {shop.name}
-                    <StatusBadge status={shop.status} />
-                  </CardTitle>
-                  <CardDescription>{shop.address}</CardDescription>
+              <CardTitle>Shop Overview</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium">Shop Name</Label>
+                <p className="text-lg">{shop.name}</p>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium">Address</Label>
+                <p className="text-muted-foreground">{shop.address}</p>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium">Description</Label>
+                <p className="text-muted-foreground">{shop.description}</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium">Status</Label>
+                <StatusBadge status={shop.status} />
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Update Status</Label>
+                <Select value={shop.status} onValueChange={updateShopStatus}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="open">Open</SelectItem>
+                    <SelectItem value="mild">Mild</SelectItem>
+                    <SelectItem value="busy">Busy</SelectItem>
+                    <SelectItem value="closed">Closed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Daily Analytics */}
+              <div className="border-t pt-4">
+                <Label className="text-sm font-medium">Today's Analytics</Label>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div className="p-3 bg-muted rounded-lg">
+                    <div className="text-2xl font-bold text-primary">
+                      {bookings.filter(booking => {
+                        const today = new Date().toDateString();
+                        const bookingDate = new Date(booking.created_at).toDateString();
+                        return bookingDate === today;
+                      }).length}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Daily Customers</p>
+                  </div>
+                  <div className="p-3 bg-muted rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">
+                      {bookings.filter(booking => {
+                        const thisMonth = new Date().getMonth();
+                        const bookingMonth = new Date(booking.created_at).getMonth();
+                        return booking.status === 'accepted' && bookingMonth === thisMonth;
+                      }).length}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Monthly Completed</p>
+                  </div>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Shop Status (Real-time updates)</label>
-                  <Select value={shop.status} onValueChange={updateShopStatus}>
-                    <SelectTrigger className="w-full mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="open">Open</SelectItem>
-                      <SelectItem value="mild">Mild</SelectItem>
-                      <SelectItem value="busy">Busy</SelectItem>
-                      <SelectItem value="closed">Closed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {shop.description && (
-                  <p className="text-sm text-muted-foreground">{shop.description}</p>
-                )}
 
-                {/* Services Display */}
-                {shop.services && shop.services.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Services</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {shop.services.map((service: any, index: number) => (
-                        <div key={index} className="flex justify-between items-center p-2 border rounded">
-                          <span className="text-sm">{service.name}</span>
-                          <span className="text-sm font-medium">₹{service.price}</span>
+              <div>
+                <Label className="text-sm font-medium">Services Performance</Label>
+                <div className="mt-2 space-y-2">
+                  {shop.services && Array.isArray(shop.services) && shop.services.map((service: any, index: number) => {
+                    const serviceBookings = bookings.filter(booking => 
+                      booking.service_name === service.name && 
+                      booking.status === 'accepted' &&
+                      new Date(booking.created_at).toDateString() === new Date().toDateString()
+                    ).length;
+                    
+                    return (
+                      <div key={index} className="flex justify-between items-center p-2 bg-muted rounded">
+                        <div>
+                          <span className="font-medium">{service.name}</span>
+                          <div className="text-xs text-muted-foreground">₹{service.price}</div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                        <div className="text-right">
+                          <div className="font-bold text-primary">{serviceBookings}</div>
+                          <div className="text-xs text-muted-foreground">Today</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="bookings" className="space-y-6">
-          {/* Booking Requests */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

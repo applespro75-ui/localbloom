@@ -10,6 +10,7 @@ import { Upload, MapPin, Plus, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { ImageUpload } from '@/components/ImageUpload';
 
 interface Service {
   name: string;
@@ -24,6 +25,7 @@ interface ProfileSetupProps {
 export default function ProfileSetup({ userProfile, onComplete }: ProfileSetupProps) {
   const [name, setName] = useState(userProfile?.name || '');
   const [phone, setPhone] = useState(userProfile?.phone || '');
+  const [profilePhoto, setProfilePhoto] = useState(userProfile?.profile_photo || '');
   const [loading, setLoading] = useState(false);
   
   // Shop owner specific fields
@@ -32,6 +34,7 @@ export default function ProfileSetup({ userProfile, onComplete }: ProfileSetupPr
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<'open' | 'mild' | 'busy' | 'closed'>('open');
   const [services, setServices] = useState<Service[]>([{ name: '', price: 0 }]);
+  const [shopPhoto, setShopPhoto] = useState('');
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -58,7 +61,11 @@ export default function ProfileSetup({ userProfile, onComplete }: ProfileSetupPr
       // Update user profile
       const { error: userError } = await supabase
         .from('users')
-        .update({ name, phone })
+        .update({ 
+          name, 
+          phone,
+          profile_photo: profilePhoto 
+        })
         .eq('id', user?.id!);
 
       if (userError) throw userError;
@@ -76,7 +83,8 @@ export default function ProfileSetup({ userProfile, onComplete }: ProfileSetupPr
             description,
             status,
             services: validServices as any,
-            phone
+            phone,
+            photo_url: shopPhoto
           });
 
         if (shopError) throw shopError;
@@ -137,6 +145,14 @@ export default function ProfileSetup({ userProfile, onComplete }: ProfileSetupPr
                   />
                 </div>
               </div>
+              
+              <ImageUpload
+                bucket="profile-photos"
+                currentImageUrl={profilePhoto}
+                onImageUpload={setProfilePhoto}
+                label="Profile Photo"
+                description="Face photo only"
+              />
             </div>
 
             {/* Shop Owner Fields */}
@@ -180,6 +196,14 @@ export default function ProfileSetup({ userProfile, onComplete }: ProfileSetupPr
                         rows={3}
                       />
                     </div>
+
+                    <ImageUpload
+                      bucket="shop-images"
+                      currentImageUrl={shopPhoto}
+                      onImageUpload={setShopPhoto}
+                      label="Shop Photo"
+                      description="Shop full photo from outside including banner"
+                    />
 
                     <div className="space-y-2">
                       <Label>Current Status</Label>

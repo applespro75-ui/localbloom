@@ -193,48 +193,36 @@ export default function CustomerDashboard() {
                     {shop.description}
                   </p>
                 )}
-                {shop.services && shop.services.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {shop.services.slice(0, 2).map((service, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary/10 text-primary"
-                      >
-                        {service.name} - ₹{service.price}
-                      </span>
-                    ))}
-                    {shop.services.length > 2 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-xs h-6 px-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedShop(shop);
-                          setServicesModalOpen(true);
-                        }}
-                      >
-                        <List size={12} className="mr-1" />
-                        View All Services
-                      </Button>
-                    )}
-                  </div>
-                )}
+                 {shop.services && shop.services.length > 0 && (
+                   <div className="flex flex-wrap gap-2 mb-3">
+                     {shop.services.slice(0, 3).map((service, index) => (
+                       <span
+                         key={index}
+                         className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary/10 text-primary"
+                       >
+                         {service.name} - ₹{service.price}
+                       </span>
+                     ))}
+                     {shop.services.length > 3 && (
+                       <span className="text-xs text-muted-foreground">
+                         +{shop.services.length - 3} more services
+                       </span>
+                     )}
+                   </div>
+                 )}
                 <div className="flex gap-2">
-                  {shop.services && shop.services.length > 0 && (
-                    <Button 
-                      variant="outline" 
-                      className="flex-1" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedShop(shop);
-                        setServicesModalOpen(true);
-                      }}
-                    >
-                      <List size={16} className="mr-1" />
-                      Services
-                    </Button>
-                  )}
+                  <Button 
+                    variant="outline" 
+                    className="flex-1" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedShop(shop);
+                      setServicesModalOpen(true);
+                    }}
+                  >
+                    <List size={16} className="mr-1" />
+                    Services Offered
+                  </Button>
                   <Button className="flex-1" onClick={(e) => {
                     e.stopPropagation();
                     setSelectedShop(shop);
