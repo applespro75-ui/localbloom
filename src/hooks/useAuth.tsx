@@ -25,31 +25,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          // Fetch profile data
           setTimeout(async () => {
-            const { data: profile } = await supabase
-              .from('users')
-              .select('*')
-              .eq('id', session.user.id)
-              .maybeSingle();
-            setUserProfile(profile);
+            try {
+              const { data: profile, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', session.user.id)
+                .maybeSingle();
+              
+              if (error && error.code !== 'PGRST116') {
+                console.error('Error fetching profile:', error);
+              }
+              
+              setUserProfile(profile);
+              setLoading(false);
+            } catch (error) {
+              console.error('Error in profile fetch:', error);
+              setUserProfile(null);
+              setLoading(false);
+            }
           }, 0);
         } else {
           setUserProfile(null);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+      if (session?.user) {
+        setSession(session);
+        setUser(session.user);
+        // Fetch profile for existing session
+        supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle()
+          .then(({ data: profile, error }) => {
+            if (error && error.code !== 'PGRST116') {
+              console.error('Error fetching existing profile:', error);
+            }
+            setUserProfile(profile);
+            setLoading(false);
+          });
+      } else {
+        setSession(null);
+        setUser(null);
+        setUserProfile(null);
+        setLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
