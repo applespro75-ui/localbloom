@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { User, Phone, MapPin, Edit } from 'lucide-react';
+import { User, Phone, MapPin, Edit, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -150,8 +150,8 @@ export default function Profile() {
           </CardHeader>
         </Card>
 
-        {/* Personal Information */}
-        <Card>
+        {/* Profile Information */}
+        <Card className="premium-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User size={20} />
@@ -190,12 +190,24 @@ export default function Profile() {
                 disabled 
               />
             </div>
+            
+            {/* Profile photo upload */}
+            <div className="space-y-2">
+              <Label>Profile Photo</Label>
+              <div className="text-xs text-muted-foreground mb-2">
+                {userProfile.role === 'customer' ? 'Face photo only' : 'Shop full photo from outside including banner'}
+              </div>
+              <Button variant="outline" disabled={!isEditing}>
+                <Plus size={16} className="mr-2" />
+                Upload Photo
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
         {/* Shop Information (only for shop owners) */}
         {userProfile.role === 'shop_owner' && (
-          <Card>
+          <Card className="premium-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin size={20} />
@@ -231,30 +243,33 @@ export default function Profile() {
                   rows={3}
                 />
               </div>
-              {shopData?.services && (
-                <div className="space-y-2">
-                  <Label>Services</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {shopData.services.map((service: any, index: number) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 text-primary"
-                      >
-                        {service.name} - ₹{service.price}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         )}
 
         {/* Save Button */}
         {isEditing && (
-          <Button onClick={handleSave} disabled={loading} className="w-full">
-            {loading ? 'Saving...' : 'Save Changes'}
-          </Button>
+          <Card className="premium-card">
+            <CardContent className="pt-6">
+              <div className="flex gap-3">
+                <Button 
+                  onClick={handleSave} 
+                  disabled={loading} 
+                  className="flex-1 premium-button"
+                >
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsEditing(false)}
+                  className="flex-1"
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
       <Navigation />

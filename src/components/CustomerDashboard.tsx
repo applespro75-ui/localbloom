@@ -18,11 +18,17 @@ interface Shop {
   status: 'open' | 'mild' | 'busy' | 'closed';
   services: any[];
   photo_url?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export default function CustomerDashboard() {
   const [shops, setShops] = useState<Shop[]>([]);
+  const [filteredShops, setFilteredShops] = useState<Shop[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [showNearby, setShowNearby] = useState(false);
+  const [userLocation, setUserLocation] = useState<{lat: number; lng: number} | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
@@ -63,7 +69,7 @@ export default function CustomerDashboard() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setShops((data || []) as Shop[]);
+      setShops((data || []) as any);
     } catch (error: any) {
       toast({
         title: "Error fetching shops",
@@ -75,10 +81,85 @@ export default function CustomerDashboard() {
     }
   };
 
-  const filteredShops = shops.filter(shop => 
-    shop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    shop.address?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    let filtered = shops.filter(shop => 
+      shop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      shop.address?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // Apply status filter
+    if (statusFilter) {
+      filtered = filtered.filter(shop => shop.status === statusFilter);
+    }
+
+    // Apply nearby filter
+    if (showNearby && userLocation) {
+      filtered = filtered.filter(shop => {
+        if (!shop.latitude || !shop.longitude) return false;
+        const distance = calculateDistance(
+          userLocation.lat, 
+          userLocation.lng, 
+          shop.latitude, 
+          shop.longitude
+        );
+        return distance <= 1; // Within 1km
+      });
+    }
+
+    setFilteredShops(filtered);
+  }, [shops, searchTerm, statusFilter, showNearby, userLocation]);
+
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  const handleNearbyClick = () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "Location not supported",
+        description: "Your browser doesn't support location services.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+        setShowNearby(true);
+        toast({
+          title: "Location updated",
+          description: "Showing nearby shops within 1km.",
+        });
+      },
+      (error) => {
+        toast({
+          title: "Location Error",
+          description: "Failed to get your location. Please enable location permissions.",
+          variant: "destructive"
+        });
+      }
+    );
+  };
+
+  const handleStatusFilter = (status: string) => {
+    if (statusFilter === status) {
+      setStatusFilter(null);
+    } else {
+      setStatusFilter(status);
+    }
+    setShowNearby(false);
+  };
 
   const addToFavorites = async (shopId: string) => {
     try {
@@ -130,17 +211,43 @@ export default function CustomerDashboard() {
 
       {/* Filter Buttons */}
       <div className="flex gap-2 overflow-x-auto pb-2">
-        <Button variant="outline" size="sm">
+        <Button 
+          variant={!statusFilter && !showNearby ? "default" : "outline"} 
+          size="sm"
+          onClick={() => {
+            setStatusFilter(null);
+            setShowNearby(false);
+          }}
+        >
           <Filter size={16} className="mr-2" />
           All Shops
         </Button>
-        <Button variant="outline" size="sm">
+        <Button 
+          variant={showNearby ? "default" : "outline"} 
+          size="sm"
+          onClick={handleNearbyClick}
+        >
           <MapPin size={16} className="mr-2" />
           Nearby
         </Button>
-        <StatusBadge status="open" className="cursor-pointer" />
-        <StatusBadge status="mild" className="cursor-pointer" />
-        <StatusBadge status="busy" className="cursor-pointer" />
+        <div 
+          className={`cursor-pointer transition-all ${statusFilter === 'open' ? 'ring-2 ring-primary' : ''}`}
+          onClick={() => handleStatusFilter('open')}
+        >
+          <StatusBadge status="open" />
+        </div>
+        <div 
+          className={`cursor-pointer transition-all ${statusFilter === 'mild' ? 'ring-2 ring-primary' : ''}`}
+          onClick={() => handleStatusFilter('mild')}
+        >
+          <StatusBadge status="mild" />
+        </div>
+        <div 
+          className={`cursor-pointer transition-all ${statusFilter === 'busy' ? 'ring-2 ring-primary' : ''}`}
+          onClick={() => handleStatusFilter('busy')}
+        >
+          <StatusBadge status="busy" />
+        </div>
       </div>
 
       {/* Shops List */}
@@ -155,9 +262,9 @@ export default function CustomerDashboard() {
           </Card>
         ) : (
           filteredShops.map((shop) => (
-            <Card 
+             <Card 
               key={shop.id} 
-              className="cursor-pointer hover:shadow-md transition-shadow"
+              className="premium-card cursor-pointer"
               onClick={() => {
                 setSelectedShop(shop);
                 setBookingModalOpen(true);
@@ -198,13 +305,13 @@ export default function CustomerDashboard() {
                      {shop.services.slice(0, 3).map((service, index) => (
                        <span
                          key={index}
-                         className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary/10 text-primary"
+                         className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary/10 text-primary font-medium"
                        >
                          {service.name} - ₹{service.price}
                        </span>
                      ))}
                      {shop.services.length > 3 && (
-                       <span className="text-xs text-muted-foreground">
+                       <span className="text-xs text-muted-foreground font-medium">
                          +{shop.services.length - 3} more services
                        </span>
                      )}

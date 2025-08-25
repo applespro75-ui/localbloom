@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Clock, CheckCircle, XCircle, LogOut, Settings } from 'lucide-react';
+import { Plus, Edit, Clock, CheckCircle, XCircle, LogOut, Settings, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
+import ServiceManager from '@/components/ServiceManager';
+import LocationPicker from '@/components/LocationPicker';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
@@ -19,6 +21,9 @@ interface Shop {
   status: 'open' | 'mild' | 'busy' | 'closed';
   services: any[];
   photo_url?: string;
+  latitude?: number;
+  longitude?: number;
+  phone?: string;
 }
 
 interface Booking {
@@ -111,7 +116,7 @@ export default function ShopOwnerDashboard() {
         throw error;
       }
       
-      setShop(data as Shop);
+      setShop(data as any);
     } catch (error: any) {
       console.error('Error fetching shop:', error);
     } finally {
@@ -200,7 +205,48 @@ export default function ShopOwnerDashboard() {
   };
 
   const handleLogout = async () => {
-    await signOut();
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  const updateShopLocation = (locationData: { address: string; latitude?: number; longitude?: number }) => {
+    if (!shop) return;
+    
+    const updatedShop = {
+      ...shop,
+      address: locationData.address,
+      latitude: locationData.latitude,
+      longitude: locationData.longitude
+    } as any;
+    
+    setShop(updatedShop);
+    
+    // Update in database
+    supabase
+      .from('shops')
+      .update({
+        address: locationData.address,
+        latitude: locationData.latitude,
+        longitude: locationData.longitude
+      })
+      .eq('id', shop.id)
+      .then(({ error }) => {
+        if (error) {
+          toast({
+            title: "Error updating location",
+            description: error.message,
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Location updated",
+            description: "Shop location has been updated successfully.",
+          });
+        }
+      });
   };
 
   if (loading) {
@@ -253,25 +299,21 @@ export default function ShopOwnerDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="overview">Shop Overview</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="services">Services</TabsTrigger>
           <TabsTrigger value="bookings">Bookings</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview" className="space-y-6">
-          <Card>
+          <Card className="premium-card">
             <CardHeader>
               <CardTitle>Shop Overview</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <Label className="text-sm font-medium">Shop Name</Label>
-                <p className="text-lg">{shop.name}</p>
-              </div>
-              
-              <div>
-                <Label className="text-sm font-medium">Address</Label>
-                <p className="text-muted-foreground">{shop.address}</p>
+                <p className="text-lg font-semibold">{shop.name}</p>
               </div>
               
               <div>
@@ -353,10 +395,28 @@ export default function ShopOwnerDashboard() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Location Management */}
+          <LocationPicker
+            address={shop.address || ''}
+            latitude={shop.latitude}
+            longitude={shop.longitude}
+            onLocationChange={updateShopLocation}
+          />
+        </TabsContent>
+
+        <TabsContent value="services" className="space-y-6">
+          <ServiceManager
+            shopId={shop.id}
+            services={shop.services || []}
+            onServicesUpdate={(updatedServices) => {
+              setShop({ ...shop, services: updatedServices });
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="bookings" className="space-y-6">
-          <Card>
+          <Card className="premium-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock size={20} />
@@ -377,7 +437,7 @@ export default function ShopOwnerDashboard() {
               ) : (
                 <div className="space-y-4">
                   {bookings.map((booking) => (
-                    <div key={booking.id} className="border rounded-lg p-4 space-y-3">
+                    <div key={booking.id} className="border rounded-lg p-4 space-y-3 hover:bg-muted/50 transition-colors">
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="font-medium">{booking.users?.name || 'Customer'}</p>
@@ -385,7 +445,10 @@ export default function ShopOwnerDashboard() {
                             Service: {booking.service_name}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            Preferred: {new Date(booking.preferred_time).toLocaleString()}
+                            Preferred: {new Date(booking.preferred_time).toLocaleString('en-IN', {
+                              dateStyle: 'medium',
+                              timeStyle: 'short'
+                            })}
                           </p>
                           {booking.users?.phone && (
                             <p className="text-sm text-muted-foreground">
@@ -408,6 +471,7 @@ export default function ShopOwnerDashboard() {
                           <Button 
                             size="sm" 
                             onClick={() => updateBookingStatus(booking.id, 'accepted')}
+                            className="premium-button"
                           >
                             <CheckCircle size={16} className="mr-2" />
                             Accept

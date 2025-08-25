@@ -100,7 +100,7 @@ export default function BookingModal({ shop, isOpen, onClose }: BookingModalProp
               <SelectContent>
                 {shop.services?.map((service, index) => (
                   <SelectItem key={index} value={service.name}>
-                    {service.name} - ${service.price}
+                    {service.name} - ₹{service.price}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -128,14 +128,26 @@ export default function BookingModal({ shop, isOpen, onClose }: BookingModalProp
               <Label htmlFor="time">Preferred Time</Label>
               <div className="relative">
                 <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
-                <Input
+                <select
                   id="time"
-                  type="time"
                   value={preferredTime}
                   onChange={(e) => setPreferredTime(e.target.value)}
-                  className="pl-10"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-10"
                   required
-                />
+                >
+                  <option value="">Select time</option>
+                  {Array.from({ length: 24 }, (_, i) => {
+                    const hour = i;
+                    const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+                    const ampm = hour < 12 ? 'AM' : 'PM';
+                    const timeValue = `${hour.toString().padStart(2, '0')}:00`;
+                    return (
+                      <option key={i} value={timeValue}>
+                        {hour12}:00 {ampm}
+                      </option>
+                    );
+                  })}
+                </select>
               </div>
             </div>
           </div>
