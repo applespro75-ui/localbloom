@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
 import { Navigation } from '@/components/Navigation';
+import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 
 interface Booking {
   id: string;
@@ -148,10 +149,11 @@ export default function Bookings() {
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="h-32 bg-muted rounded animate-pulse"></div>
-        ))}
+      <div className="min-h-screen bg-background flex items-center justify-center pb-20">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading bookings...</p>
+        </div>
       </div>
     );
   }
@@ -239,6 +241,7 @@ export default function Bookings() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      <ThemeToggleButton />
       <div className="p-4 space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold">

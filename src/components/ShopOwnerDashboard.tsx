@@ -286,16 +286,10 @@ export default function ShopOwnerDashboard() {
       {/* Header with action buttons */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Shop Dashboard</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setIsEditing(!isEditing)}>
-            <Settings size={16} className="mr-2" />
-            {isEditing ? 'Cancel Edit' : 'Edit Shop'}
-          </Button>
-          <Button variant="destructive" onClick={handleLogout}>
-            <LogOut size={16} className="mr-2" />
-            Logout
-          </Button>
-        </div>
+        <Button variant="destructive" onClick={handleLogout}>
+          <LogOut size={16} className="mr-2" />
+          Logout
+        </Button>
       </div>
 
       <Tabs defaultValue="overview" className="w-full">

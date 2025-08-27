@@ -19,6 +19,52 @@ export function ImageUpload({ bucket, currentImageUrl, onImageUpload, label, des
   const [uploading, setUploading] = useState(false);
   const { user } = useAuth();
 
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions (max 800x600 for optimization)
+        const maxWidth = 800;
+        const maxHeight = 600;
+        let { width, height } = img;
+        
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          } else {
+            resolve(file);
+          }
+        }, 'image/jpeg', 0.8);
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const uploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setUploading(true);
@@ -27,13 +73,15 @@ export function ImageUpload({ bucket, currentImageUrl, onImageUpload, label, des
         throw new Error('You must select an image to upload.');
       }
 
-      const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
+      const originalFile = event.target.files[0];
+      const compressedFile = await compressImage(originalFile);
+      
+      const fileExt = compressedFile.name.split('.').pop();
       const fileName = `${user?.id}/${Math.random()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from(bucket)
-        .upload(fileName, file);
+        .upload(fileName, compressedFile);
 
       if (uploadError) {
         throw uploadError;

@@ -100,10 +100,12 @@ All colors MUST be HSL.
     --gradient-card: linear-gradient(145deg, hsl(240 10% 3.9%), hsl(240 3.7% 15.9%));
     --gradient-dark: linear-gradient(145deg, hsl(240 10% 3.9%), hsl(240 10% 8%));
     
-    /* Premium Dark Shadows */
-    --shadow-premium: 0 25px 50px -12px hsl(263 70% 50.4% / 0.4);
-    --shadow-card: 0 4px 6px -1px hsl(240 3.7% 15.9% / 0.3), 0 2px 4px -1px hsl(240 3.7% 15.9% / 0.2);
-    --shadow-elevated: 0 10px 15px -3px hsl(240 3.7% 15.9% / 0.3), 0 4px 6px -2px hsl(240 3.7% 15.9% / 0.2);
+  /* Enhanced animations */
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.15s ease-out;
+  --transition-theme: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.3);
+  --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.4);
     
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -118,7 +120,8 @@ All colors MUST be HSL.
 
 @layer base {
   * {
-    @apply border-border transition-colors;
+    border-color: hsl(var(--border));
+    transition: var(--transition-theme);
   }
 
   body {

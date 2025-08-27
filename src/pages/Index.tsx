@@ -43,29 +43,13 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-10 bg-background border-b border-border">
-        <div className="flex justify-between items-center p-4">
-          <h1 className="text-xl font-bold">
-            {userProfile.role === 'shop_owner' ? 'Shop Dashboard' : 'Find Shops'}
-          </h1>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <Button variant="outline" size="sm" onClick={signOut}>
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </header>
-      
-      <main className="p-4">
-        {userProfile.role === 'shop_owner' ? (
-          <ShopOwnerContainer />
-        ) : (
-          <CustomerDashboard />
-        )}
-      </main>
-      
+    <div className="pb-20">
+      <ThemeToggleButton />
+      {userProfile?.role === 'shop_owner' ? (
+        <ShopOwnerContainer />
+      ) : (
+        <CustomerDashboard />
+      )}
       <Navigation />
     </div>
   );

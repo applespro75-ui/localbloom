@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Search, MapPin, Filter, Heart, List } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Search, MapPin, Star, Clock, Filter, Navigation2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/StatusBadge';
-import BookingModal from '@/components/BookingModal';
-import ServicesModal from '@/components/ServicesModal';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/components/ui/use-toast';
+import { BookingModal } from '@/components/BookingModal';
+import { ServicesModal } from '@/components/ServicesModal';
+import WeatherWidget from '@/components/WeatherWidget';
 
 interface Shop {
   id: string;

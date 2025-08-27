@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { User, Phone, MapPin, Edit, Plus } from 'lucide-react';
+import { User, Phone, MapPin, Edit, Save, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigation } from '@/components/Navigation';
+import { ImageUpload } from '@/components/ImageUpload';
+import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
@@ -22,6 +24,8 @@ export default function Profile() {
   const [shopName, setShopName] = useState('');
   const [address, setAddress] = useState('');
   const [description, setDescription] = useState('');
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState('');
+  const [shopPhotoUrl, setShopPhotoUrl] = useState('');
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -44,6 +48,7 @@ export default function Profile() {
       setUserProfile(profile);
       setName(profile?.name || '');
       setPhone(profile?.phone || '');
+      setProfilePhotoUrl(profile?.profile_photo || '');
 
       // If shop owner, fetch shop data
       if (profile?.role === 'shop_owner') {
@@ -58,6 +63,7 @@ export default function Profile() {
           setShopName(shop.name || '');
           setAddress(shop.address || '');
           setDescription(shop.description || '');
+          setShopPhotoUrl(shop.photo_url || '');
         }
       }
     } catch (error: any) {
@@ -76,7 +82,11 @@ export default function Profile() {
       // Update user profile
       const { error: userError } = await supabase
         .from('users')
-        .update({ name, phone })
+        .update({ 
+          name, 
+          phone,
+          profile_photo: profilePhotoUrl 
+        })
         .eq('id', user?.id!);
 
       if (userError) throw userError;
@@ -89,7 +99,8 @@ export default function Profile() {
             name: shopName,
             address,
             description,
-            phone
+            phone,
+            photo_url: shopPhotoUrl
           })
           .eq('id', shopData.id);
 
@@ -121,12 +132,14 @@ export default function Profile() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
           <p className="mt-2 text-muted-foreground">Loading profile...</p>
         </div>
+        <ThemeToggleButton />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      <ThemeToggleButton />
       <div className="max-w-2xl mx-auto p-4 space-y-6">
         {/* Header */}
         <Card>
@@ -138,14 +151,35 @@ export default function Profile() {
                   Manage your {userProfile.role === 'shop_owner' ? 'shop' : 'account'} information
                 </CardDescription>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => setIsEditing(!isEditing)}
-                disabled={loading}
-              >
-                <Edit size={16} className="mr-2" />
-                {isEditing ? 'Cancel' : 'Edit'}
-              </Button>
+              {!isEditing ? (
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditing(true)}
+                  disabled={loading}
+                >
+                  <Edit size={16} className="mr-2" />
+                  Edit Profile
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSave}
+                    disabled={loading}
+                    className="premium-button"
+                  >
+                    <Save size={16} className="mr-2" />
+                    {loading ? 'Saving...' : 'Save'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsEditing(false)}
+                    disabled={loading}
+                  >
+                    <X size={16} className="mr-2" />
+                    Cancel
+                  </Button>
+                </div>
+              )}
             </div>
           </CardHeader>
         </Card>
@@ -192,16 +226,13 @@ export default function Profile() {
             </div>
             
             {/* Profile photo upload */}
-            <div className="space-y-2">
-              <Label>Profile Photo</Label>
-              <div className="text-xs text-muted-foreground mb-2">
-                {userProfile.role === 'customer' ? 'Face photo only' : 'Shop full photo from outside including banner'}
-              </div>
-              <Button variant="outline" disabled={!isEditing}>
-                <Plus size={16} className="mr-2" />
-                Upload Photo
-              </Button>
-            </div>
+            <ImageUpload
+              bucket="profile-photos"
+              currentImageUrl={profilePhotoUrl}
+              onImageUpload={setProfilePhotoUrl}
+              label="Profile Photo"
+              description={userProfile.role === 'customer' ? 'Face photo only' : 'Professional photo'}
+            />
           </CardContent>
         </Card>
 
@@ -243,34 +274,19 @@ export default function Profile() {
                   rows={3}
                 />
               </div>
+              
+              {/* Shop photo upload */}
+              <ImageUpload
+                bucket="shop-images"
+                currentImageUrl={shopPhotoUrl}
+                onImageUpload={setShopPhotoUrl}
+                label="Shop Photo"
+                description="Shop full photo from outside including banner"
+              />
             </CardContent>
           </Card>
         )}
 
-        {/* Save Button */}
-        {isEditing && (
-          <Card className="premium-card">
-            <CardContent className="pt-6">
-              <div className="flex gap-3">
-                <Button 
-                  onClick={handleSave} 
-                  disabled={loading} 
-                  className="flex-1 premium-button"
-                >
-                  {loading ? 'Saving...' : 'Save Changes'}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsEditing(false)}
-                  className="flex-1"
-                  disabled={loading}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
       <Navigation />
     </div>

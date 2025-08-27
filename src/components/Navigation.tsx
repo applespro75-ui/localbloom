@@ -22,7 +22,7 @@ export function Navigation() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border">
+    <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border">
       <div className="flex justify-around items-center py-2">
         {navItems.map(({ icon: Icon, label, path }) => {
           const isActive = location.pathname === path;
@@ -30,14 +30,20 @@ export function Navigation() {
             <Link
               key={path}
               to={path}
-              className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
-                isActive 
-                  ? 'text-primary bg-primary/10' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className="flex flex-col items-center py-2 px-3 rounded-lg transition-all duration-200 hover:scale-105"
             >
-              <Icon size={20} />
-              <span className="text-xs mt-1">{label}</span>
+              <div
+                className={`p-2 rounded-full transition-all duration-200 ${
+                  isActive 
+                    ? 'bg-primary text-primary-foreground shadow-md' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                <Icon size={20} />
+              </div>
+              <span className={`text-xs mt-1 transition-colors ${
+                isActive ? 'text-primary font-medium' : 'text-muted-foreground'
+              }`}>{label}</span>
             </Link>
           );
         })}
